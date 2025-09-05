@@ -6,12 +6,20 @@ import NotesModal from "./components/NotesModal"
 import FriendsRecommendations from "./components/FriendsRecommendations"
 import type { Book } from "./types"
 import * as booksService from "./services/booksService"
+import { searchBooks } from "./services/bookApi"   
+import type { ApiBook } from "./services/bookApi"  
+import { v4 as uuidv4 } from "uuid"
+
 
 const App: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([])
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState<Book | undefined>()
   const [loading, setLoading] = useState(true)
+
+  // ✅ API search için state
+  const [searchTerm, setSearchTerm] = useState("")
+  const [searchResults, setSearchResults] = useState<ApiBook[]>([])
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -38,6 +46,28 @@ const App: React.FC = () => {
     setBooks(prev => prev.map(x => (x.id === b.id ? b : x)))
   }
 
+  // ✅ Google Books API arama fonksiyonu
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) return
+    const results = await searchBooks(searchTerm)
+    setSearchResults(results)
+  }
+
+  // ✅ API’den gelen kitabı Firestore’a ekle
+  const addApiBook = async (apiBook: ApiBook) => {
+    const newBook: Book = {
+      id: uuidv4(),
+      title: apiBook.title,
+      author: apiBook.author,
+      pages: apiBook.pageCount ?? 0,
+      readPages: 0,
+      notes: "",
+      coverUrl: apiBook.thumbnail ?? '', 
+      addedAt: new Date().toISOString(), 
+    }
+    await addBook(newBook)
+  }
+
   const filtered = books.filter(b =>
     b.title.toLowerCase().includes(query.toLowerCase().trim()) ||
     b.author.toLowerCase().includes(query.toLowerCase().trim())
@@ -60,6 +90,56 @@ const App: React.FC = () => {
             </div>
           </div>
 
+          {/* ✅ Google Books Search Panel */}
+          <div className="bg-white p-4 rounded shadow">
+            <h3 className="font-semibold mb-2">Search Books (Google API)</h3>
+            <div className="flex gap-2">
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by title or author"
+                className="flex-1 p-2 border rounded"
+              />
+              <button
+                onClick={handleSearch}
+                className="px-3 py-2 bg-blue-600 text-white rounded"
+              >
+                Search
+              </button>
+            </div>
+
+            {searchResults.length > 0 && (
+              <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+                {searchResults.map((b) => (
+                  <div
+                    key={b.id}
+                    className="flex items-center justify-between border p-2 rounded"
+                  >
+                    <div className="flex items-center gap-3">
+                      {b.thumbnail && (
+                        <img
+                          src={b.thumbnail}
+                          alt={b.title}
+                          className="w-12 h-16 object-cover"
+                        />
+                      )}
+                      <div>
+                        <div className="font-medium">{b.title}</div>
+                        <div className="text-sm text-gray-600">{b.author}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => addApiBook(b)}
+                      className="px-2 py-1 bg-green-600 text-white rounded"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-3 flex-col md:flex-row">
             <div className="flex-1">
               <BookForm onAdd={addBook} />
@@ -69,7 +149,7 @@ const App: React.FC = () => {
                 <input
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  placeholder="Search by title or author"
+                  placeholder="Search in your library"
                   className="w-full p-2 border rounded"
                 />
                 <div className="mt-3">
@@ -112,8 +192,7 @@ const App: React.FC = () => {
               <button
                 onClick={() => {
                   setBooks([])
-                  // Firestore’dan da temizle
-                  // İstersen ekleyelim
+                  // TODO: Firestore’dan da temizle
                 }}
                 className="px-3 py-2 rounded border"
               >
@@ -142,7 +221,7 @@ const App: React.FC = () => {
       )}
 
       <footer className="text-center p-4 text-sm text-gray-500">
-        Made with ❤️ — Book Tracker
+        Made with ❤️ — Zeynep's Reading Tracker
       </footer>
     </div>
   )

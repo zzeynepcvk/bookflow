@@ -6,5 +6,6 @@ export type Book = {
     readPages: number
     notes?: string
     quotes?: string[]
+    coverUrl?: string
     addedAt: string
   }
