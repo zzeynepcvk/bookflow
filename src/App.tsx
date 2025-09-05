@@ -42,9 +42,14 @@ const App: React.FC = () => {
   }
 
   const updateBook = async (b: Book) => {
-    await booksService.updateBook(b)
-    setBooks(prev => prev.map(x => (x.id === b.id ? b : x)))
+    const safeBook = {
+      ...b,
+      quotes: b.quotes ?? [], 
+    }
+    await booksService.updateBook(safeBook)
+    setBooks(prev => prev.map(x => (x.id === b.id ? safeBook : x)))
   }
+  
 
   // ✅ Google Books API arama fonksiyonu
   const handleSearch = async () => {
@@ -62,6 +67,7 @@ const App: React.FC = () => {
       pages: apiBook.pageCount ?? 0,
       readPages: 0,
       notes: "",
+      quotes: [],
       coverUrl: apiBook.thumbnail ?? '', 
       addedAt: new Date().toISOString(), 
     }
