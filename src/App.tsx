@@ -92,7 +92,7 @@ const App: React.FC = () => {
 
           {/* ✅ Google Books Search Panel */}
           <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-semibold mb-2">Search Books (Google API)</h3>
+            <h3 className="font-semibold mb-2">Search&Add Books</h3>
             <div className="flex gap-2">
               <input
                 value={searchTerm}
