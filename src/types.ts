@@ -8,4 +8,5 @@ export type Book = {
     quotes?: string[]
     coverUrl?: string
     addedAt: string
+    ownerId?: string
   }

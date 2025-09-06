@@ -1,6 +1,7 @@
 // src/firebase.ts
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 // Firebase config (senin değerlerin)
 const firebaseConfig = {
@@ -18,3 +19,4 @@ const app = initializeApp(firebaseConfig);
 
 // Firestore veritabanı
 export const db = getFirestore(app);
+export const auth = getAuth(app);

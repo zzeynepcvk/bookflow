@@ -1,64 +1,93 @@
-import React, { useEffect, useState } from "react"
-import Header from "./components/Header"
-import BookForm from "./components/BookForm"
-import BookCard from "./components/BookCard"
-import NotesModal from "./components/NotesModal"
-import FriendsRecommendations from "./components/FriendsRecommendations"
-import type { Book } from "./types"
-import * as booksService from "./services/booksService"
-import { searchBooks } from "./services/bookApi"   
-import type { ApiBook } from "./services/bookApi"  
-import { v4 as uuidv4 } from "uuid"
+import { useAuth } from "./contexts/AuthContext";
+import AuthScreen from "./components/AuthScreen";
 
+import React, { useEffect, useState } from "react";
+import Header from "./components/Header";
+import BookForm from "./components/BookForm";
+import BookCard from "./components/BookCard";
+import NotesModal from "./components/NotesModal";
+import FriendsRecommendations from "./components/FriendsRecommendations";
+import type { Book } from "./types";
+import * as booksService from "./services/booksService";
+import { searchBooks } from "./services/bookApi";
+import type { ApiBook } from "./services/bookApi";
+import { v4 as uuidv4 } from "uuid";
 
 const App: React.FC = () => {
-  const [books, setBooks] = useState<Book[]>([])
-  const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState<Book | undefined>()
-  const [loading, setLoading] = useState(true)
+  // ✅ Auth durumu
+  const { user, loading: authLoading, approved } = useAuth();
 
-  // ✅ API search için state
-  const [searchTerm, setSearchTerm] = useState("")
-  const [searchResults, setSearchResults] = useState<ApiBook[]>([])
+/*   if (authLoading) {
+    return (
+      <div className="min-h-screen grid place-items-center text-gray-500">
+        Yükleniyor...
+      </div>
+    );
+  } */
 
+  if (!user) {
+    return <AuthScreen />; // giriş/kayıt ekranı
+  }
+
+  if (!approved) {
+    return (
+      <div className="min-h-screen grid place-items-center text-gray-600">
+        Hesabınız onay bekliyor.
+      </div>
+    );
+  }
+
+  // ✅ Kitap uygulaması state'leri
+  const [books, setBooks] = useState<Book[]>([]);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<Book | undefined>();
+  const [booksLoading, setBooksLoading] = useState(true);
+
+  // ✅ Google Books API search
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<ApiBook[]>([]);
+
+  // ✅ Kitapları Firestore'dan çek
   useEffect(() => {
     const fetchBooks = async () => {
-      setLoading(true)
-      const data = await booksService.getBooks()
-      setBooks(data)
-      setLoading(false)
-    }
-    fetchBooks()
-  }, [])
+      setBooksLoading(true);
+      const data = await booksService.getBooks(); // ✅ parametre yok
+      setBooks(data);
+      setBooksLoading(false);
+    };
+    fetchBooks();
+  }, [user.uid]);
 
+  // ✅ Kitap ekle
   const addBook = async (b: Book) => {
-    const newBook = await booksService.addBook(b)
-    setBooks(prev => [newBook, ...prev])
-  }
+    const newBook = await booksService.addBook(b); // ✅ sadece book gönder
+    setBooks((prev) => [newBook, ...prev]);
+  };
 
+  // ✅ Kitap sil
   const deleteBook = async (id: string) => {
-    await booksService.deleteBook(id)
-    setBooks(prev => prev.filter(b => b.id !== id))
-  }
+    await booksService.deleteBook(id);
+    setBooks((prev) => prev.filter((b) => b.id !== id));
+  };
 
+  // ✅ Kitap güncelle
   const updateBook = async (b: Book) => {
     const safeBook = {
       ...b,
-      quotes: b.quotes ?? [], 
-    }
-    await booksService.updateBook(safeBook)
-    setBooks(prev => prev.map(x => (x.id === b.id ? safeBook : x)))
-  }
-  
+      quotes: b.quotes ?? [],
+    };
+    await booksService.updateBook(safeBook);
+    setBooks((prev) => prev.map((x) => (x.id === b.id ? safeBook : x)));
+  };
 
-  // ✅ Google Books API arama fonksiyonu
+  // ✅ Google Books arama
   const handleSearch = async () => {
-    if (!searchTerm.trim()) return
-    const results = await searchBooks(searchTerm)
-    setSearchResults(results)
-  }
+    if (!searchTerm.trim()) return;
+    const results = await searchBooks(searchTerm);
+    setSearchResults(results);
+  };
 
-  // ✅ API’den gelen kitabı Firestore’a ekle
+  // ✅ API kitap Firestore’a ekle
   const addApiBook = async (apiBook: ApiBook) => {
     const newBook: Book = {
       id: uuidv4(),
@@ -68,21 +97,25 @@ const App: React.FC = () => {
       readPages: 0,
       notes: "",
       quotes: [],
-      coverUrl: apiBook.thumbnail ?? '', 
-      addedAt: new Date().toISOString(), 
-    }
-    await addBook(newBook)
-  }
+      coverUrl: apiBook.thumbnail ?? "",
+      addedAt: new Date().toISOString(),
+    };
+    await addBook(newBook);
+  };
 
-  const filtered = books.filter(b =>
-    b.title.toLowerCase().includes(query.toLowerCase().trim()) ||
-    b.author.toLowerCase().includes(query.toLowerCase().trim())
-  )
+  // ✅ Filtreleme
+  const filtered = books.filter(
+    (b) =>
+      b.title.toLowerCase().includes(query.toLowerCase().trim()) ||
+      b.author.toLowerCase().includes(query.toLowerCase().trim())
+  );
 
   const stats = {
     total: books.length,
-    completed: books.filter(b => (b.pages ? b.readPages >= b.pages : false)).length,
-  }
+    completed: books.filter((b) =>
+      b.pages ? b.readPages >= b.pages : false
+    ).length,
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -96,9 +129,9 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* ✅ Google Books Search Panel */}
+          {/* Google Books Search Panel */}
           <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-semibold mb-2">Search&Add Books</h3>
+            <h3 className="font-semibold mb-2">Search & Add Books</h3>
             <div className="flex gap-2">
               <input
                 value={searchTerm}
@@ -154,7 +187,7 @@ const App: React.FC = () => {
               <div className="bg-white p-4 rounded shadow">
                 <input
                   value={query}
-                  onChange={e => setQuery(e.target.value)}
+                  onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search in your library"
                   className="w-full p-2 border rounded"
                 />
@@ -166,20 +199,22 @@ const App: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {loading ? (
-              <div className="col-span-full text-center text-gray-500">Loading...</div>
+            {booksLoading ? (
+              <div className="col-span-full text-center text-gray-500">
+                Loading...
+              </div>
             ) : filtered.length === 0 ? (
               <div className="col-span-full text-center text-gray-500">
                 No books found — add your first book!
               </div>
             ) : (
-              filtered.map(b => (
+              filtered.map((b) => (
                 <BookCard
                   key={b.id}
                   book={b}
                   onDelete={deleteBook}
                   onUpdate={updateBook}
-                  onOpenNotes={book => setSelected(book)}
+                  onOpenNotes={(book) => setSelected(book)}
                 />
               ))
             )}
@@ -189,7 +224,9 @@ const App: React.FC = () => {
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded shadow">
             <h3 className="font-semibold mb-2">Reading Summary</h3>
-            <div className="text-sm text-gray-600">You have {books.length} saved books.</div>
+            <div className="text-sm text-gray-600">
+              You have {books.length} saved books.
+            </div>
           </div>
 
           <div className="bg-white p-4 rounded shadow">
@@ -197,7 +234,7 @@ const App: React.FC = () => {
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
-                  setBooks([])
+                  setBooks([]);
                   // TODO: Firestore’dan da temizle
                 }}
                 className="px-3 py-2 rounded border"
@@ -206,8 +243,10 @@ const App: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(JSON.stringify(books, null, 2))
-                  alert("Exported to clipboard")
+                  navigator.clipboard.writeText(
+                    JSON.stringify(books, null, 2)
+                  );
+                  alert("Exported to clipboard");
                 }}
                 className="px-3 py-2 rounded bg-indigo-600 text-white"
               >
@@ -230,7 +269,7 @@ const App: React.FC = () => {
         Made with ❤️ — Zeynep's Reading Tracker
       </footer>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;
