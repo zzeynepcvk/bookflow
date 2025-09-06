@@ -19,21 +19,25 @@ export default function AuthScreen() {
         approved: false,
         createdAt: serverTimestamp()
       });
-      setMsg("Kayıt başarılı. Hesabınız onay bekliyor. Onaylanınca giriş yapabileceksiniz.");
+      setMsg("✅ Kayıt başarılı. Hesabınız onay bekliyor. Onaylanınca giriş yapabileceksiniz.");
     } catch (err: any) {
+      console.error("Register error", err);
       setMsg(err.message || "Kayıt hatası");
     }
   };
-
+  
   const onLogin = async () => {
     try {
       setMsg("");
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      console.log("✅ Login successful:", cred.user.uid);
+      setMsg("✅ Giriş başarılı!");
     } catch (err: any) {
+      console.error("Login error", err);
       setMsg(err.message || "Giriş hatası");
     }
   };
-
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="bg-white w-full max-w-md rounded-2xl shadow p-6 space-y-4">
