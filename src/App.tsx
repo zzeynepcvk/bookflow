@@ -14,25 +14,39 @@ import type { ApiBook } from "./services/bookApi";
 import { v4 as uuidv4 } from "uuid";
 
 const App: React.FC = () => {
-  // ✅ Auth durumu
-  const { user, loading:  approved } = useAuth();
+  // ✅ Auth durumu - düzeltildi
+  const { user, approved, loading } = useAuth();
 
-/*   if (authLoading) {
+  // ✅ Loading durumu kontrolü
+  if (loading) {
     return (
       <div className="min-h-screen grid place-items-center text-gray-500">
         Yükleniyor...
       </div>
     );
-  } */
-
-  if (!user) {
-    return <AuthScreen />; // giriş/kayıt ekranı
   }
 
+  // ✅ Kullanıcı giriş yapmamışsa AuthScreen göster
+  if (!user) {
+    return <AuthScreen />;
+  }
+
+  // ✅ Kullanıcı onaylanmamışsa bekleme ekranı
   if (!approved) {
     return (
       <div className="min-h-screen grid place-items-center text-gray-600">
-        Hesabınız onay bekliyor.
+        <div className="text-center">
+          <div className="mb-4 text-xl">Hesabınız onay bekliyor</div>
+          <div className="text-sm text-gray-500 mb-4">
+            Yönetici tarafından onaylanmanızı bekleyin.
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Sayfayı Yenile
+          </button>
+        </div>
       </div>
     );
   }
@@ -50,44 +64,72 @@ const App: React.FC = () => {
   // ✅ Kitapları Firestore'dan çek
   useEffect(() => {
     const fetchBooks = async () => {
-      setBooksLoading(true);
-      const data = await booksService.getBooks(); // ✅ parametre yok
-      setBooks(data);
-      setBooksLoading(false);
+      try {
+        setBooksLoading(true);
+        const data = await booksService.getBooks();
+        setBooks(data);
+      } catch (error) {
+        console.error("Kitaplar yüklenirken hata:", error);
+      } finally {
+        setBooksLoading(false);
+      }
     };
-    fetchBooks();
-  }, [user.uid]);
+    
+    if (user && approved) {
+      fetchBooks();
+    }
+  }, [user, approved]);
 
   // ✅ Kitap ekle
   const addBook = async (b: Book) => {
-    const newBook = await booksService.addBook(b); // ✅ sadece book gönder
-    setBooks((prev) => [newBook, ...prev]);
+    try {
+      const newBook = await booksService.addBook(b);
+      setBooks((prev) => [newBook, ...prev]);
+    } catch (error) {
+      console.error("Kitap eklenirken hata:", error);
+      alert("Kitap eklenirken bir hata oluştu");
+    }
   };
 
   // ✅ Kitap sil
   const deleteBook = async (id: string) => {
-    await booksService.deleteBook(id);
-    setBooks((prev) => prev.filter((b) => b.id !== id));
+    try {
+      await booksService.deleteBook(id);
+      setBooks((prev) => prev.filter((b) => b.id !== id));
+    } catch (error) {
+      console.error("Kitap silinirken hata:", error);
+      alert("Kitap silinirken bir hata oluştu");
+    }
   };
 
   // ✅ Kitap güncelle
   const updateBook = async (b: Book) => {
-    const safeBook = {
-      ...b,
-      quotes: b.quotes ?? [],
-    };
-    await booksService.updateBook(safeBook);
-    setBooks((prev) => prev.map((x) => (x.id === b.id ? safeBook : x)));
+    try {
+      const safeBook = {
+        ...b,
+        quotes: b.quotes ?? [],
+      };
+      await booksService.updateBook(safeBook);
+      setBooks((prev) => prev.map((x) => (x.id === b.id ? safeBook : x)));
+    } catch (error) {
+      console.error("Kitap güncellenirken hata:", error);
+      alert("Kitap güncellenirken bir hata oluştu");
+    }
   };
 
   // ✅ Google Books arama
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
-    const results = await searchBooks(searchTerm);
-    setSearchResults(results);
+    try {
+      const results = await searchBooks(searchTerm);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Kitap arama hatası:", error);
+      alert("Kitap aranırken bir hata oluştu");
+    }
   };
 
-  // ✅ API kitap Firestore’a ekle
+  // ✅ API kitap Firestore'a ekle
   const addApiBook = async (apiBook: ApiBook) => {
     const newBook: Book = {
       id: uuidv4(),
@@ -101,6 +143,9 @@ const App: React.FC = () => {
       addedAt: new Date().toISOString(),
     };
     await addBook(newBook);
+    // API sonuçlarını temizle
+    setSearchResults([]);
+    setSearchTerm("");
   };
 
   // ✅ Filtreleme
@@ -138,10 +183,11 @@ const App: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by title or author"
                 className="flex-1 p-2 border rounded"
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
               <button
                 onClick={handleSearch}
-                className="px-3 py-2 bg-blue-600 text-white rounded"
+                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Search
               </button>
@@ -165,11 +211,14 @@ const App: React.FC = () => {
                       <div>
                         <div className="font-medium">{b.title}</div>
                         <div className="text-sm text-gray-600">{b.author}</div>
+                        <div className="text-xs text-gray-500">
+                          {b.pageCount ? `${b.pageCount} pages` : 'Page count unknown'}
+                        </div>
                       </div>
                     </div>
                     <button
                       onClick={() => addApiBook(b)}
-                      className="px-2 py-1 bg-green-600 text-white rounded"
+                      className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                     >
                       Add
                     </button>
@@ -200,12 +249,25 @@ const App: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {booksLoading ? (
-              <div className="col-span-full text-center text-gray-500">
-                Loading...
+              <div className="col-span-full text-center text-gray-500 py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                Kitaplar yükleniyor...
               </div>
             ) : filtered.length === 0 ? (
-              <div className="col-span-full text-center text-gray-500">
-                No books found — add your first book!
+              <div className="col-span-full text-center text-gray-500 py-8">
+                {query ? (
+                  <>
+                    <div className="mb-2">"{query}" için sonuç bulunamadı</div>
+                    <button
+                      onClick={() => setQuery("")}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Tüm kitapları göster
+                    </button>
+                  </>
+                ) : (
+                  "Henüz kitap yok — ilk kitabınızı ekleyin!"
+                )}
               </div>
             ) : (
               filtered.map((b) => (
@@ -224,8 +286,10 @@ const App: React.FC = () => {
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded shadow">
             <h3 className="font-semibold mb-2">Reading Summary</h3>
-            <div className="text-sm text-gray-600">
-              You have {books.length} saved books.
+            <div className="text-sm text-gray-600 space-y-1">
+              <div>Toplam kitap: {books.length}</div>
+              <div>Tamamlanan: {stats.completed}</div>
+              <div>Devam eden: {books.length - stats.completed}</div>
             </div>
           </div>
 
@@ -234,23 +298,25 @@ const App: React.FC = () => {
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
-                  setBooks([]);
-                  // TODO: Firestore’dan da temizle
+                  if (window.confirm("Tüm kitapları silmek istediğinizden emin misiniz?")) {
+                    // TODO: Firestore'dan da temizle
+                    setBooks([]);
+                  }
                 }}
-                className="px-3 py-2 rounded border"
+                className="px-3 py-2 rounded border hover:bg-gray-50"
               >
-                Clear all
+                Tümünü Temizle
               </button>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(
                     JSON.stringify(books, null, 2)
                   );
-                  alert("Exported to clipboard");
+                  alert("Kitap listesi panoya kopyalandı!");
                 }}
-                className="px-3 py-2 rounded bg-indigo-600 text-white"
+                className="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
               >
-                Export
+                Dışa Aktar
               </button>
             </div>
           </div>
