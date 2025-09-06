@@ -14,43 +14,74 @@ import type { ApiBook } from "./services/bookApi";
 import { v4 as uuidv4 } from "uuid";
 
 const App: React.FC = () => {
-  // ✅ Auth durumu - düzeltildi
+  // ✅ Auth durumu
   const { user, approved, loading } = useAuth();
+
+  console.log("🎯 App render - loading:", loading, "user:", !!user, "approved:", approved);
 
   // ✅ Loading durumu kontrolü
   if (loading) {
     return (
       <div className="min-h-screen grid place-items-center text-gray-500">
-        Yükleniyor...
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <div>Yükleniyor...</div>
+          <div className="text-xs mt-2 text-gray-400">
+            Firebase bağlantısı kontrol ediliyor...
+          </div>
+        </div>
       </div>
     );
   }
 
   // ✅ Kullanıcı giriş yapmamışsa AuthScreen göster
   if (!user) {
+    console.log("👤 Kullanıcı yok - AuthScreen gösteriliyor");
     return <AuthScreen />;
   }
 
   // ✅ Kullanıcı onaylanmamışsa bekleme ekranı
-  if (!approved) {
+  if (approved === false) {
+    console.log("❌ Kullanıcı onaysız - bekleme ekranı");
     return (
       <div className="min-h-screen grid place-items-center text-gray-600">
-        <div className="text-center">
-          <div className="mb-4 text-xl">Hesabınız onay bekliyor</div>
-          <div className="text-sm text-gray-500 mb-4">
+        <div className="text-center space-y-4">
+          <div className="text-xl">Hesabınız onay bekliyor</div>
+          <div className="text-sm text-gray-500">
             Yönetici tarafından onaylanmanızı bekleyin.
           </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Sayfayı Yenile
-          </button>
+          <div className="text-xs text-gray-400">
+            Kullanıcı: {user.email}
+          </div>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Sayfayı Yenile
+            </button>
+            <button
+              onClick={async () => {
+                const { signOutNow } = useAuth();
+                await signOutNow();
+              }}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Çıkış Yap
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
+  // ✅ Bu noktaya geldiğimizde user var ve approved === true
+  console.log("✅ Ana uygulama gösteriliyor - kullanıcı:", user.email);
+  return <MainApp />;
+};
+
+// Ana uygulama komponenti ayrıldı
+const MainApp: React.FC = () => {
   // ✅ Kitap uygulaması state'leri
   const [books, setBooks] = useState<Book[]>([]);
   const [query, setQuery] = useState("");
@@ -66,7 +97,9 @@ const App: React.FC = () => {
     const fetchBooks = async () => {
       try {
         setBooksLoading(true);
+        console.log("Fetching books...");
         const data = await booksService.getBooks();
+        console.log("Books fetched:", data.length);
         setBooks(data);
       } catch (error) {
         console.error("Kitaplar yüklenirken hata:", error);
@@ -75,10 +108,8 @@ const App: React.FC = () => {
       }
     };
     
-    if (user && approved) {
-      fetchBooks();
-    }
-  }, [user, approved]);
+    fetchBooks();
+  }, []);
 
   // ✅ Kitap ekle
   const addBook = async (b: Book) => {

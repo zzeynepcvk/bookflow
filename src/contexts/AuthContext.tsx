@@ -25,31 +25,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      setLoading(true);
-      if (!u) {
-        setUser(null);
-        setApproved(null);
-        setLoading(false);
-        return;
-      }
+      console.log("Auth state changed:", u ? u.email : "No user");
+      
+      try {
+        setLoading(true);
+        
+        if (!u) {
+          console.log("No user, setting states to null");
+          setUser(null);
+          setApproved(null);
+          setLoading(false);
+          return;
+        }
 
-      setUser(u);
-      const snap = await getDoc(doc(db, "users", u.uid));
-      if (!snap.exists() || snap.data().approved !== true) {
-        setApproved(false); // kullanıcı var ama onaysız
-        setLoading(false);
-        return;
-      }
+        console.log("User found, checking approval status...");
+        setUser(u);
 
-      setApproved(true);
-      setLoading(false);
+        // Kullanıcı dökümanını kontrol et
+        const userDocRef = doc(db, "users", u.uid);
+        const snap = await getDoc(userDocRef);
+        
+        if (!snap.exists()) {
+          console.log("User document does not exist");
+          setApproved(false);
+          setLoading(false);
+          return;
+        }
+
+        const userData = snap.data();
+        const isApproved = userData.approved === true;
+        
+        console.log("User approval status:", isApproved);
+        setApproved(isApproved);
+        
+      } catch (error) {
+        console.error("Error checking user approval:", error);
+        setApproved(false);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return unsub;
   }, []);
 
+  const signOutNow = async () => {
+    try {
+      await signOut(auth);
+      // State'leri temizle
+      setUser(null);
+      setApproved(null);
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, approved, loading, signOutNow: () => signOut(auth) }}>
+    <AuthContext.Provider value={{ user, approved, loading, signOutNow }}>
       {children}
     </AuthContext.Provider>
   );
