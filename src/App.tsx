@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const App: React.FC = () => {
   // ✅ Auth durumu
-  const { user, loading: authLoading, approved } = useAuth();
+  const { user, loading:  approved } = useAuth();
 
 /*   if (authLoading) {
     return (
