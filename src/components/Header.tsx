@@ -6,9 +6,14 @@ const Header: React.FC = () => {
   const { user, signOutNow } = useAuth();
 
   return (
-    <header className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+    <header className="bg-gradient-to-r from-indigo-600 to-pink-300 text-white p-6">
       <div className="container mx-auto flex items-center justify-between">
-        <h1 className="text-2xl font-bold">📚 Zeynep's Book Tracker 💖</h1>
+      <img 
+            src="/romance.png" 
+            alt="Logo" 
+            className="w-10 h-10 rounded-lg shadow-md"
+          />
+        <h1 className="text-2xl font-bold">📚 Zeynep's Library 💖</h1>
         <nav className="flex items-center gap-4">
           <a className="hover:underline cursor-pointer">My Books</a>
           <a className="hover:underline cursor-pointer">Add Book</a>

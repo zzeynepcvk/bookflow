@@ -40,7 +40,7 @@ const NotesModal: React.FC<Props> = ({ book, onClose, onSave }) => {
           <h4 className="font-medium">Quotes</h4>
           <div className="flex gap-2 mt-2">
             <input value={newQuote} onChange={e => setNewQuote(e.target.value)} placeholder="Add quote" className="flex-1 p-2 border rounded" />
-            <button onClick={addQuote} className="px-3 py-2 bg-indigo-600 text-white rounded">Add</button>
+            <button onClick={addQuote} className="px-3 py-2 bg-pink-600 text-white rounded">Add</button>
           </div>
           <ul className="mt-2 list-disc ml-5">
             {quotes.map((q, i) => (

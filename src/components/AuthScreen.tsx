@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { FirebaseError } from "firebase/app";
+import { auth, db } from "../firebase";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export default function AuthScreen() {
-  const [mode, setMode] = useState("login");
+  const [mode, setMode] = useState<"login" | "register">("login");
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
@@ -19,13 +23,13 @@ export default function AuthScreen() {
       setLoading(true);
       setMsg("");
       
-      // Firebase işlemleri burada olacak
-      // const cred = await createUserWithEmailAndPassword(auth, email, password);
-      // await setDoc(doc(db, "users", cred.user.uid), {
-      //   email: email.trim(),
-      //   approved: false,
-      //   createdAt: serverTimestamp()
-      // });
+      
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "users", cred.user.uid), {
+        email: email.trim(),
+        approved: false,
+        createdAt: serverTimestamp()
+      });
       
       setMsg("✅ Kayıt başarılı! Hesabınız onay bekliyor. Onaylanınca giriş yapabileceksiniz. Acil durumda zeynepcvk21@gmail.com adresine ulaşınnn 💖");
       
@@ -64,8 +68,8 @@ export default function AuthScreen() {
       
       // Firebase işlemleri burada olacak
       // const cred = await signInWithEmailAndPassword(auth, email, password);
-      
-      setMsg("✅ Giriş başarılı! Yönlendiriliyorsunuz...");
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      console.log("✅ Login successful:", cred.user.uid);
       
     } catch (err) {
       console.error("Login error:", err);
@@ -120,14 +124,16 @@ export default function AuthScreen() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pink-400 to-rose-400 rounded-2xl shadow-lg mb-3">
             <span className="text-2xl">📚</span>
           </div>
+          
           <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
             Zeynep's Library
           </h1>
+          
           <p className="text-sm text-pink-600 font-medium tracking-wide">
             ✨ Kitap Koleksiyonun ✨
           </p>
           <p className="text-xs text-gray-500 italic">
-            "Bir kitap, bir bahçedir cebinizde taşıdığınız" 🌸
+            "Kitap , zekayı kibarlaştırır " 🌸
           </p>
         </div>
         

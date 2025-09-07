@@ -13,6 +13,7 @@ import { searchBooks } from "./services/bookApi";
 import type { ApiBook } from "./services/bookApi";
 import { v4 as uuidv4 } from "uuid";
 
+
 const App: React.FC = () => {
   // ✅ Auth durumu
   const { user, approved, loading } = useAuth();
@@ -62,7 +63,7 @@ const App: React.FC = () => {
             </button>
             <button
               onClick={async () => {
-                
+
                 await signOutNow();
               }}
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
@@ -107,7 +108,7 @@ const MainApp: React.FC = () => {
         setBooksLoading(false);
       }
     };
-    
+
     fetchBooks();
   }, []);
 
@@ -148,17 +149,40 @@ const MainApp: React.FC = () => {
     }
   };
 
-  // ✅ Google Books arama
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
-    try {
-      const results = await searchBooks(searchTerm);
-      setSearchResults(results);
-    } catch (error) {
-      console.error("Kitap arama hatası:", error);
-      alert("Kitap aranırken bir hata oluştu");
-    }
+  // ✅ Google Books arama (debounce + case-insensitive)
+  let searchTimeout: ReturnType<typeof setTimeout>;
+
+  const handleSearch = async (term: string) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    searchTimeout = setTimeout(async () => {
+      if (!term.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      try {
+        const results = await searchBooks(term);
+
+        // 🔍 normalize et
+        const normalized = term.toLowerCase().trim();
+
+        // 📌 hem başlık hem yazar alanında ara
+        const filtered = results.filter(book => {
+          const title = book.title?.toLowerCase() || "";
+          const author = book.author?.toLowerCase() || "";
+          return title.includes(normalized) || author.includes(normalized);
+        });
+
+        setSearchResults(filtered);
+      } catch (error) {
+        console.error("Kitap arama hatası:", error);
+        alert("Kitap aranırken bir hata oluştu");
+      }
+    }, 500); // ⏳ 500ms beklemeden sonra çalışır
   };
+
+
 
   // ✅ API kitap Firestore'a ekle
   const addApiBook = async (apiBook: ApiBook) => {
@@ -209,19 +233,19 @@ const MainApp: React.FC = () => {
           <div className="bg-white p-4 rounded shadow">
             <h3 className="font-semibold mb-2">Search & Add Books</h3>
             <div className="flex gap-2">
-              <input
+              <input 
+                type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by title or author"
-                className="flex-1 p-2 border rounded"
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                onChange={e => {
+                  setSearchTerm(e.target.value);
+                  handleSearch(e.target.value); // ✅ artık debounce ile arıyor
+                }}
+                placeholder="Kitap ara..."
+                className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition-all duration-300 placeholder-gray-400 text-gray-800 shadow-sm"
+
               />
-              <button
-                onClick={handleSearch}
-                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Search
-              </button>
+
+              
             </div>
 
             {searchResults.length > 0 && (
@@ -345,7 +369,7 @@ const MainApp: React.FC = () => {
                   );
                   alert("Kitap listesi panoya kopyalandı!");
                 }}
-                className="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+                className="px-3 py-2 rounded bg-pink-400 text-white hover:bg-indigo-700"
               >
                 Dışa Aktar
               </button>

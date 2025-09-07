@@ -3,8 +3,8 @@ import React, { useState } from 'react'
 // Minimal friend recommendations UI — uses a simple in-memory list and a "share" action that copies a small message to clipboard.
 
 const sample = [
-  { id: 'f1', name: 'Ayşe', suggestion: 'The Midnight Library — Matt Haig' },
-  { id: 'f2', name: 'Mehmet', suggestion: 'Sapiens — Yuval Noah Harari' },
+  { id: 'f1', name: 'Zeynep', suggestion: 'The Midnight Library — Matt Haig' },
+  { id: 'f2', name: 'Müberra', suggestion: 'Kuran-Kerim 🖤' },
 ]
 
 const FriendsRecommendations: React.FC = () => {
@@ -29,7 +29,7 @@ const FriendsRecommendations: React.FC = () => {
               <div className="text-sm text-gray-600">{i.suggestion}</div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => share(`${i.name} recommends: ${i.suggestion}`)} className="px-3 py-2 rounded bg-indigo-600 text-white">Share</button>
+              <button onClick={() => share(`${i.name} recommends: ${i.suggestion}`)} className="px-3 py-2 rounded bg-pink-600 text-white">Share</button>
             </div>
           </li>
         ))}

@@ -38,7 +38,7 @@ const BookForm: React.FC<Props> = ({ onAdd }) => {
       </div>
       <div className="flex gap-2">
         <input value={pages} onChange={e => setPages(e.target.value)} placeholder="Pages (optional)" className="p-2 border rounded w-40" />
-        <button className="px-4 py-2 bg-indigo-600 text-white rounded">Add Book</button>
+        <button className="px-4 py-2 bg-pink-400 text-white rounded">Add Book</button>
       </div>
     </form>
   )
