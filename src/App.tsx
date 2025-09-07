@@ -16,7 +16,7 @@ import { v4 as uuidv4 } from "uuid";
 const App: React.FC = () => {
   // ✅ Auth durumu
   const { user, approved, loading } = useAuth();
-
+  const { signOutNow } = useAuth();
   console.log("🎯 App render - loading:", loading, "user:", !!user, "approved:", approved);
 
   // ✅ Loading durumu kontrolü
@@ -62,7 +62,7 @@ const App: React.FC = () => {
             </button>
             <button
               onClick={async () => {
-                const { signOutNow } = useAuth();
+                
                 await signOutNow();
               }}
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
