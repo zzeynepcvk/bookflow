@@ -218,7 +218,7 @@ const MainApp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-pink-50">
       <Header />
       <main className="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
@@ -240,7 +240,7 @@ const MainApp: React.FC = () => {
                   setSearchTerm(e.target.value);
                   handleSearch(e.target.value); // ✅ artık debounce ile arıyor
                 }}
-                placeholder="Kitap ara..."
+                placeholder="Kitap ara... Bir kaç denemeye ihtiyaç olabilir 😉"
                 className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition-all duration-300 placeholder-gray-400 text-gray-800 shadow-sm"
 
               />
